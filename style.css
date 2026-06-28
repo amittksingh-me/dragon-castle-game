@@ -146,6 +146,44 @@ html, body {
 .score-line.small { font-size: clamp(13px, 2.4vmin, 20px); opacity: 0.85; }
 .score-line span { color: var(--accent); font-weight: 800; }
 
+/* ---------- character / costume selector ---------- */
+.selector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(10px, 3vmin, 28px);
+  margin: 14px auto 6px;
+  flex-wrap: wrap;
+}
+#preview {
+  width: clamp(120px, 22vmin, 170px);
+  height: auto;
+  background: radial-gradient(circle at 50% 40%, rgba(255,255,255,0.16), rgba(255,255,255,0.03));
+  border: 2px solid rgba(255,255,255,0.18);
+  border-radius: 16px;
+}
+.picker { min-width: 220px; }
+.pick-label { font-size: clamp(12px, 2vmin, 16px); opacity: 0.7; margin: 6px 0 2px; }
+.pick-row { display: flex; align-items: center; justify-content: center; gap: 12px; }
+.pick-name {
+  min-width: 7.5ch;
+  font-size: clamp(18px, 3vmin, 24px);
+  font-weight: 800;
+  color: var(--accent);
+}
+.arrow {
+  border: none;
+  border-radius: 50%;
+  width: 40px; height: 40px;
+  font-size: 18px; font-weight: 800;
+  background: rgba(255,255,255,0.16);
+  color: var(--text);
+  cursor: pointer;
+}
+.arrow:active { transform: scale(0.9); }
+.pick-hint { font-size: clamp(11px, 1.9vmin, 14px); opacity: 0.75; margin-top: 10px; max-width: 30ch; }
+.unlock-line { margin-top: 12px; font-size: clamp(14px, 2.4vmin, 19px); color: var(--accent); font-weight: 700; }
+
 .difficulty { display: flex; gap: 10px; justify-content: center; margin: 12px 0 6px; flex-wrap: wrap; }
 .diff {
   border: 2px solid rgba(255,255,255,0.25);

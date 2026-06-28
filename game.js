@@ -59,11 +59,28 @@ const FIREBALL_R = 16;
 const INVULN_TIME = 1.5;      // seconds
 const COMBO_WINDOW = 2.0;     // seconds
 
-// Default hero look for Stage 1 (character select arrives in Stage 2).
-const HERO_PALETTE = {
-  tunic: '#3a6ea5', trim: '#ffd23f', skin: '#f2c79b',
-  hat: '#c0392b', cape: '#9b59b6', boots: '#5b3a1a',
+// ---- Characters (all selectable) — data-driven so new ones are easy to add ----
+const SKIN = '#f2c79b';
+const BOOTS = '#5b3a1a';
+const CHARACTERS = {
+  knight:   { name: 'Knight',   tunic: '#4a78b0', trim: '#d7e1ec', cape: null,      hat: 'helmet', hatColor: '#9aa7b4', shield: true },
+  prince:   { name: 'Prince',   tunic: '#c0392b', trim: '#ffd23f', cape: '#7d3cff', hat: 'crown',  hatColor: '#ffd23f' },
+  princess: { name: 'Princess', tunic: '#ff6fae', trim: '#ffe08a', cape: null,      hat: 'tiara',  hatColor: '#ffd23f', dress: true, hair: '#7a3b1a' },
+  wizard:   { name: 'Wizard',   tunic: '#3b3b8f', trim: '#ffd23f', cape: null,      hat: 'wizard', hatColor: '#2a2a6e', staff: true, beard: '#e8e8f0' },
+  archer:   { name: 'Archer',   tunic: '#4a8f43', trim: '#caa46a', cape: null,      hat: 'hood',   hatColor: '#356b30', bow: true },
 };
+const CHARACTER_ORDER = ['knight', 'prince', 'princess', 'wizard', 'archer'];
+
+// ---- Costumes (global; Classic free, the rest unlockable). Cosmetic only. ----
+const COSTUMES = {
+  classic: { name: 'Classic',      recolor: null,                                          aura: null,      unlock: null },
+  royal:   { name: 'Royal',        recolor: { tunic: '#6a2fb0', trim: '#ffd23f', cape: '#ffd23f' }, aura: null,      unlock: 'Finish Adventure once' },
+  forest:  { name: 'Forest',       recolor: { tunic: '#2f7d32', trim: '#9acb6b' },         aura: null,      unlock: 'Reach 5,000 lifetime points' },
+  winter:  { name: 'Winter',       recolor: { tunic: '#5aa0d6', trim: '#eaf6ff' },         aura: 'snow',    unlock: 'Reach 10,000 lifetime points' },
+  golden:  { name: 'Golden Hero',  recolor: { tunic: '#e0a400', trim: '#fff3b0' },         aura: 'gold',    unlock: 'Beat all 12 levels, no Game Over' },
+  rainbow: { name: 'Rainbow',      recolor: 'rainbow',                                     aura: 'rainbow', unlock: 'Collect 1,000 dragons total' },
+};
+const COSTUME_ORDER = ['classic', 'royal', 'forest', 'winter', 'golden', 'rainbow'];
 
 /* ============================== STATE ================================== */
 
@@ -92,7 +109,45 @@ const game = {
   shake: 0,                 // current screen-shake magnitude
   t: 0,                     // elapsed gameplay time (s)
   muted: false,
+  character: 'knight',
+  costume: 'classic',
+  unlocked: ['classic'],    // costume keys the player owns
+  lifetimePoints: 0,
+  lifetimeDragons: 0,
 };
+
+/* ============================== SAVE / UNLOCKS ========================= */
+
+function loadSave() {
+  try {
+    game.character = localStorage.getItem('dw_character') || 'knight';
+    game.costume = localStorage.getItem('dw_costume') || 'classic';
+    game.muted = localStorage.getItem('dw_muted') === '1';
+    game.lifetimePoints = +localStorage.getItem('dw_points') || 0;
+    game.lifetimeDragons = +localStorage.getItem('dw_dragons') || 0;
+    const u = JSON.parse(localStorage.getItem('dw_unlocked') || '["classic"]');
+    game.unlocked = Array.isArray(u) && u.length ? u : ['classic'];
+  } catch (e) { /* ignore */ }
+  if (!CHARACTERS[game.character]) game.character = 'knight';
+  evaluateUnlocks();              // make sure stats-based costumes are reflected
+  if (!game.unlocked.includes(game.costume)) game.costume = 'classic';
+}
+
+function save(key, val) { try { localStorage.setItem(key, val); } catch (e) {} }
+
+// Returns the list of costumes newly earned this call.
+function evaluateUnlocks() {
+  const before = new Set(game.unlocked);
+  const owned = new Set(game.unlocked);
+  owned.add('classic');
+  if (game.lifetimePoints >= 5000) owned.add('forest');
+  if (game.lifetimePoints >= 10000) owned.add('winter');
+  if (game.lifetimeDragons >= 1000) owned.add('rainbow');
+  // 'royal' (finish Adventure) and 'golden' (12 levels no game-over) unlock in Stage 3.
+  game.unlocked = COSTUME_ORDER.filter((k) => owned.has(k));
+  save('dw_unlocked', JSON.stringify(game.unlocked));
+  return game.unlocked.filter((k) => !before.has(k));
+}
 
 /* ============================== AUDIO ================================== */
 /* Procedural Web Audio — no asset files, works offline. */
@@ -229,78 +284,228 @@ function drawStar(c, x, y, r, color) {
   c.restore();
 }
 
-// The hero: a little vector knight/prince. p = palette, squash for jump anim.
-function drawHero(c, x, feetY, facing, squash, alpha) {
-  const p = HERO_PALETTE;
+// Resolve the colour palette for a character + costume (rainbow animates by time).
+function resolveLook(charKey, costKey, time) {
+  const ch = CHARACTERS[charKey] || CHARACTERS.knight;
+  const co = COSTUMES[costKey] || COSTUMES.classic;
+  let tunic = ch.tunic, trim = ch.trim, cape = ch.cape;
+  if (co.recolor === 'rainbow') {
+    const hd = (time * 60) % 360;
+    tunic = `hsl(${hd}, 80%, 55%)`;
+    trim = `hsl(${(hd + 60) % 360}, 90%, 72%)`;
+    if (ch.cape) cape = `hsl(${(hd + 180) % 360}, 80%, 55%)`;
+  } else if (co.recolor) {
+    if (co.recolor.tunic) tunic = co.recolor.tunic;
+    if (co.recolor.trim) trim = co.recolor.trim;
+    if (co.recolor.cape && ch.cape) cape = co.recolor.cape;
+  }
+  return { ch, co, tunic, trim, cape };
+}
+
+// The hero — parametric vector drawing driven by character + costume.
+function drawHero(c, x, feetY, facing, squash, alpha, charKey, costKey, time) {
+  const { ch, co, tunic, trim, cape } = resolveLook(charKey, costKey, time);
+  const w = PLAYER_W, h = PLAYER_H;
+
   c.save();
   c.globalAlpha = alpha;
-  // shadow
+
+  // shadow (in world space, before transform)
   c.globalAlpha = alpha * 0.25;
   c.fillStyle = '#000';
   c.beginPath();
-  c.ellipse(x, feetY + 2, PLAYER_W * 0.5, 7, 0, 0, Math.PI * 2);
+  c.ellipse(x, feetY + 2, w * 0.5, 7, 0, 0, Math.PI * 2);
   c.fill();
   c.globalAlpha = alpha;
 
   c.translate(x, feetY);
+
+  // aura (behind the hero, drawn before the squash flip so it stays upright)
+  if (co.aura) drawAura(c, co.aura, w, h, time);
+
   const sx = (1 + squash * 0.35) * (facing < 0 ? -1 : 1);
   const sy = (1 - squash * 0.35);
   c.scale(sx, sy);
 
-  const w = PLAYER_W, h = PLAYER_H;
-  // cape
-  c.fillStyle = p.cape;
-  c.beginPath();
-  c.moveTo(-w * 0.22, -h * 0.78);
-  c.quadraticCurveTo(-w * 0.62, -h * 0.4, -w * 0.34, -h * 0.04);
-  c.lineTo(-w * 0.06, -h * 0.1);
-  c.lineTo(-w * 0.06, -h * 0.78);
-  c.closePath();
-  c.fill();
+  // cape (prince / royal)
+  if (cape) {
+    c.fillStyle = cape;
+    c.beginPath();
+    c.moveTo(-w * 0.22, -h * 0.78);
+    c.quadraticCurveTo(-w * 0.62, -h * 0.4, -w * 0.34, -h * 0.04);
+    c.lineTo(-w * 0.06, -h * 0.1);
+    c.lineTo(-w * 0.06, -h * 0.78);
+    c.closePath();
+    c.fill();
+  }
+
+  // bow (archer) — behind the body
+  if (ch.bow) {
+    c.strokeStyle = '#7a4a1d'; c.lineWidth = 4; c.lineCap = 'round';
+    c.beginPath(); c.arc(-w * 0.34, -h * 0.44, h * 0.3, -1.1, 1.1); c.stroke();
+    c.strokeStyle = 'rgba(255,255,255,0.7)'; c.lineWidth = 1.5;
+    c.beginPath();
+    c.moveTo(-w * 0.34 + Math.cos(-1.1) * h * 0.3, -h * 0.44 + Math.sin(-1.1) * h * 0.3);
+    c.lineTo(-w * 0.34 + Math.cos(1.1) * h * 0.3, -h * 0.44 + Math.sin(1.1) * h * 0.3);
+    c.stroke();
+  }
+
   // legs
-  c.fillStyle = p.boots;
+  c.fillStyle = BOOTS;
   roundRect(c, -w * 0.28, -h * 0.26, w * 0.22, h * 0.26, 5); c.fill();
   roundRect(c, w * 0.06, -h * 0.26, w * 0.22, h * 0.26, 5); c.fill();
-  // body / tunic
-  c.fillStyle = p.tunic;
-  roundRect(c, -w * 0.34, -h * 0.66, w * 0.68, h * 0.46, 10); c.fill();
-  // belt trim
-  c.fillStyle = p.trim;
-  roundRect(c, -w * 0.34, -h * 0.34, w * 0.68, h * 0.07, 3); c.fill();
-  // arm (front)
-  c.fillStyle = p.tunic;
+
+  // body — dress (princess) is a wide skirt; everyone else a tunic
+  c.fillStyle = tunic;
+  if (ch.dress) {
+    c.beginPath();
+    c.moveTo(-w * 0.2, -h * 0.66);
+    c.lineTo(w * 0.2, -h * 0.66);
+    c.lineTo(w * 0.5, -h * 0.04);
+    c.lineTo(-w * 0.5, -h * 0.04);
+    c.closePath();
+    c.fill();
+  } else {
+    roundRect(c, -w * 0.34, -h * 0.66, w * 0.68, h * 0.46, 10); c.fill();
+  }
+  // belt / trim
+  c.fillStyle = trim;
+  roundRect(c, -w * 0.3, -h * 0.36, w * 0.6, h * 0.06, 3); c.fill();
+
+  // front arm
+  c.fillStyle = tunic;
   roundRect(c, w * 0.18, -h * 0.6, w * 0.16, h * 0.3, 6); c.fill();
-  // shield
-  c.fillStyle = p.trim;
-  c.beginPath();
-  c.ellipse(w * 0.4, -h * 0.45, w * 0.16, h * 0.18, 0, 0, Math.PI * 2);
-  c.fill();
-  c.strokeStyle = '#b8860b'; c.lineWidth = 2; c.stroke();
+
+  // shield (knight)
+  if (ch.shield) {
+    c.fillStyle = trim;
+    c.beginPath();
+    c.ellipse(w * 0.42, -h * 0.45, w * 0.16, h * 0.18, 0, 0, Math.PI * 2);
+    c.fill();
+    c.strokeStyle = '#b8860b'; c.lineWidth = 2; c.stroke();
+  }
+  // staff (wizard)
+  if (ch.staff) {
+    c.strokeStyle = '#8a5a2b'; c.lineWidth = 4; c.lineCap = 'round';
+    c.beginPath(); c.moveTo(w * 0.42, -h * 0.1); c.lineTo(w * 0.42, -h * 0.95); c.stroke();
+    c.fillStyle = '#7fe3ff';
+    c.beginPath(); c.arc(w * 0.42, -h * 1.0, w * 0.1, 0, Math.PI * 2); c.fill();
+    c.fillStyle = 'rgba(180,240,255,0.5)';
+    c.beginPath(); c.arc(w * 0.42, -h * 1.0, w * 0.16, 0, Math.PI * 2); c.fill();
+  }
+
   // head
-  c.fillStyle = p.skin;
+  c.fillStyle = SKIN;
   c.beginPath();
   c.arc(0, -h * 0.78, w * 0.24, 0, Math.PI * 2);
   c.fill();
-  // hat / helmet
-  c.fillStyle = p.hat;
-  c.beginPath();
-  c.arc(0, -h * 0.82, w * 0.26, Math.PI, 0);
-  c.fill();
-  roundRect(c, -w * 0.28, -h * 0.84, w * 0.56, h * 0.06, 3); c.fill();
-  // little plume
-  c.fillStyle = p.trim;
-  c.beginPath();
-  c.ellipse(w * 0.02, -h * 1.02, w * 0.06, h * 0.1, 0.4, 0, Math.PI * 2);
-  c.fill();
+
+  // princess hair (sides/back)
+  if (ch.hair) {
+    c.fillStyle = ch.hair;
+    c.beginPath();
+    c.ellipse(-w * 0.22, -h * 0.66, w * 0.1, h * 0.18, 0, 0, Math.PI * 2);
+    c.ellipse(w * 0.22, -h * 0.66, w * 0.1, h * 0.18, 0, 0, Math.PI * 2);
+    c.fill();
+  }
+  // wizard beard
+  if (ch.beard) {
+    c.fillStyle = ch.beard;
+    c.beginPath();
+    c.moveTo(-w * 0.16, -h * 0.74);
+    c.quadraticCurveTo(0, -h * 0.44, w * 0.16, -h * 0.74);
+    c.closePath();
+    c.fill();
+  }
+
+  // hats
+  drawHat(c, ch, trim, w, h);
+
   // eyes
   c.fillStyle = '#23314a';
   c.beginPath(); c.arc(w * 0.08, -h * 0.78, 2.4, 0, Math.PI * 2); c.fill();
   c.beginPath(); c.arc(-w * 0.06, -h * 0.78, 2.4, 0, Math.PI * 2); c.fill();
-  // smile
-  c.strokeStyle = '#a85b3a'; c.lineWidth = 2;
-  c.beginPath(); c.arc(0, -h * 0.72, 5, 0.15 * Math.PI, 0.85 * Math.PI); c.stroke();
+  // smile (skip under big beard)
+  if (!ch.beard) {
+    c.strokeStyle = '#a85b3a'; c.lineWidth = 2;
+    c.beginPath(); c.arc(0, -h * 0.72, 5, 0.15 * Math.PI, 0.85 * Math.PI); c.stroke();
+  }
 
   c.restore();
+}
+
+function drawHat(c, ch, trim, w, h) {
+  const hc = ch.hatColor;
+  switch (ch.hat) {
+    case 'helmet':
+      c.fillStyle = hc;
+      c.beginPath(); c.arc(0, -h * 0.82, w * 0.26, Math.PI, 0); c.fill();
+      roundRect(c, -w * 0.28, -h * 0.84, w * 0.56, h * 0.06, 3); c.fill();
+      c.fillStyle = trim; // plume
+      c.beginPath(); c.ellipse(w * 0.02, -h * 1.02, w * 0.06, h * 0.1, 0.4, 0, Math.PI * 2); c.fill();
+      break;
+    case 'crown':
+    case 'tiara': {
+      const big = ch.hat === 'crown';
+      const top = big ? -h * 1.0 : -h * 0.98;
+      const base = -h * 0.9;
+      c.fillStyle = hc;
+      c.beginPath();
+      c.moveTo(-w * 0.26, base);
+      c.lineTo(-w * 0.26, top + h * 0.06);
+      c.lineTo(-w * 0.13, top);
+      c.lineTo(0, top + h * 0.06);
+      c.lineTo(w * 0.13, top);
+      c.lineTo(w * 0.26, top + h * 0.06);
+      c.lineTo(w * 0.26, base);
+      c.closePath(); c.fill();
+      c.fillStyle = '#ff5a5f';
+      c.beginPath(); c.arc(0, base - 2, 2.6, 0, Math.PI * 2); c.fill();
+      break;
+    }
+    case 'wizard':
+      c.fillStyle = hc;
+      c.beginPath();
+      c.moveTo(-w * 0.3, -h * 0.86);
+      c.lineTo(w * 0.3, -h * 0.86);
+      c.lineTo(w * 0.04, -h * 1.28);
+      c.closePath(); c.fill();
+      c.fillStyle = trim; // stars
+      drawStar(c, -w * 0.04, -h * 1.0, 3, trim);
+      drawStar(c, w * 0.08, -h * 1.12, 2.2, trim);
+      break;
+    case 'hood':
+      c.fillStyle = hc;
+      c.beginPath(); c.arc(0, -h * 0.8, w * 0.3, Math.PI, 0); c.fill();
+      roundRect(c, -w * 0.3, -h * 0.82, w * 0.6, h * 0.12, 4); c.fill();
+      break;
+  }
+}
+
+// Costume auras drawn behind the hero.
+function drawAura(c, kind, w, h, time) {
+  const cy = -h * 0.55;
+  if (kind === 'gold') {
+    const g = c.createRadialGradient(0, cy, 4, 0, cy, w * 0.95);
+    g.addColorStop(0, 'rgba(255,225,120,0.55)');
+    g.addColorStop(1, 'rgba(255,225,120,0)');
+    c.fillStyle = g;
+    c.beginPath(); c.arc(0, cy, w * 0.95, 0, Math.PI * 2); c.fill();
+  } else if (kind === 'rainbow') {
+    for (let i = 0; i < 6; i++) {
+      c.strokeStyle = `hsla(${(time * 90 + i * 60) % 360}, 90%, 60%, 0.5)`;
+      c.lineWidth = 3;
+      c.beginPath(); c.arc(0, cy, w * 0.55 + i * 4, 0, Math.PI * 2); c.stroke();
+    }
+  } else if (kind === 'snow') {
+    c.fillStyle = 'rgba(255,255,255,0.9)';
+    for (let i = 0; i < 7; i++) {
+      const a = time * 1.3 + i * 0.9;
+      const px = Math.cos(a) * w * 0.55;
+      const py = cy + Math.sin(a * 1.6) * h * 0.5;
+      c.beginPath(); c.arc(px, py, 2.2, 0, Math.PI * 2); c.fill();
+    }
+  }
 }
 
 // A friendly dragon. dir +1 faces right.
@@ -648,8 +853,23 @@ function hitPlayer() {
 
 function endGame() {
   game.phase = 'over';
+  // bank lifetime stats, then see if any costumes were earned
+  game.lifetimePoints += game.score;
+  game.lifetimeDragons += game.dragonsCollected;
+  save('dw_points', game.lifetimePoints);
+  save('dw_dragons', game.lifetimeDragons);
+  const earned = evaluateUnlocks();
+
   document.getElementById('final-score').textContent = game.score;
   document.getElementById('final-dragons').textContent = game.dragonsCollected;
+  const unlockEl = document.getElementById('final-unlock');
+  if (earned.length) {
+    unlockEl.textContent = '🎉 New costume unlocked: ' +
+      earned.map((k) => COSTUMES[k].name).join(', ') + '!';
+    unlockEl.classList.remove('hidden');
+  } else {
+    unlockEl.classList.add('hidden');
+  }
   showOverlay('overlay-over');
 }
 
@@ -800,7 +1020,8 @@ function render() {
   if (game.player) {
     const pl = game.player;
     const flashing = pl.invuln > 0 && Math.floor(game.t * 16) % 2 === 0;
-    drawHero(ctx, pl.x, pl.y, pl.facing, pl.squash, flashing ? 0.35 : 1);
+    drawHero(ctx, pl.x, pl.y, pl.facing, pl.squash, flashing ? 0.35 : 1,
+             game.character, game.costume, game.t);
   }
 
   for (const f of game.fireballs) drawFireball(ctx, f);
@@ -843,6 +1064,7 @@ function frame(now) {
   lastTime = now;
   update(dt);
   render();
+  if (game.phase === 'start') drawPreview();
   requestAnimationFrame(frame);
 }
 
@@ -894,7 +1116,70 @@ function toggleMute() {
   document.getElementById('btn-mute').textContent = game.muted ? '🔇' : '🔊';
 }
 
+/* ---------- character / costume selection ---------- */
+
+let charIndex = 0, cosIndex = 0;
+let previewCanvas = null, pctx = null;
+
+function initSelection() {
+  charIndex = Math.max(0, CHARACTER_ORDER.indexOf(game.character));
+  cosIndex = Math.max(0, game.unlocked.indexOf(game.costume));
+  previewCanvas = document.getElementById('preview');
+  pctx = previewCanvas.getContext('2d');
+  updateSelectionUI();
+}
+
+function cycleCharacter(delta) {
+  charIndex = (charIndex + delta + CHARACTER_ORDER.length) % CHARACTER_ORDER.length;
+  game.character = CHARACTER_ORDER[charIndex];
+  save('dw_character', game.character);
+  updateSelectionUI(); Audio.click();
+}
+
+function cycleCostume(delta) {
+  const n = game.unlocked.length;
+  cosIndex = (cosIndex + delta + n) % n;
+  game.costume = game.unlocked[cosIndex];
+  save('dw_costume', game.costume);
+  updateSelectionUI(); Audio.click();
+}
+
+function updateSelectionUI() {
+  document.getElementById('char-name').textContent = CHARACTERS[game.character].name;
+  document.getElementById('cos-name').textContent = COSTUMES[game.costume].name;
+  const nextLocked = COSTUME_ORDER.find((k) => !game.unlocked.includes(k));
+  const status = document.getElementById('cos-status');
+  status.textContent = nextLocked
+    ? '🔒 Next: ' + COSTUMES[nextLocked].name + ' — ' + COSTUMES[nextLocked].unlock
+    : 'All costumes unlocked! 🌈';
+}
+
+function drawPreview() {
+  if (!pctx) return;
+  pctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+  pctx.save();
+  pctx.translate(previewCanvas.width / 2, previewCanvas.height - 16);
+  pctx.scale(1.7, 1.7);
+  drawHero(pctx, 0, 0, 1, 0, 1, game.character, game.costume, game.t);
+  pctx.restore();
+}
+
+function goToStart() {
+  game.phase = 'start';
+  cosIndex = Math.max(0, game.unlocked.indexOf(game.costume)); // refresh after unlocks
+  updateSelectionUI();
+  hideAllOverlays();
+  showOverlay('overlay-start');
+}
+
 function wireUI() {
+  // character / costume cyclers
+  document.getElementById('char-prev').addEventListener('click', () => cycleCharacter(-1));
+  document.getElementById('char-next').addEventListener('click', () => cycleCharacter(1));
+  document.getElementById('cos-prev').addEventListener('click', () => cycleCostume(-1));
+  document.getElementById('cos-next').addEventListener('click', () => cycleCostume(1));
+  document.getElementById('btn-menu').addEventListener('click', () => { Audio.click(); goToStart(); });
+
   // difficulty selector
   document.querySelectorAll('.diff').forEach((b) => {
     b.addEventListener('click', () => {
@@ -917,11 +1202,12 @@ function wireUI() {
 }
 
 function init() {
-  try { game.muted = localStorage.getItem('dw_muted') === '1'; } catch (e) {}
+  loadSave();
   document.getElementById('btn-mute').textContent = game.muted ? '🔇' : '🔊';
   bindKeyboard();
   bindTouchControls();
   wireUI();
+  initSelection();
   window.addEventListener('resize', resize);
   window.addEventListener('orientationchange', resize);
   resize();

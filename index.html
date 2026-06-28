@@ -33,6 +33,26 @@
       <div class="panel">
         <h1>The Dragon World</h1>
         <p class="tagline">Jump to touch the friendly dragons — they turn into stars! Watch out for the falling fire.</p>
+
+        <div class="selector">
+          <canvas id="preview" width="170" height="200"></canvas>
+          <div class="picker">
+            <div class="pick-label">Hero</div>
+            <div class="pick-row">
+              <button class="arrow" id="char-prev" aria-label="Previous hero">◀</button>
+              <span class="pick-name" id="char-name">Knight</span>
+              <button class="arrow" id="char-next" aria-label="Next hero">▶</button>
+            </div>
+            <div class="pick-label">Costume</div>
+            <div class="pick-row">
+              <button class="arrow" id="cos-prev" aria-label="Previous costume">◀</button>
+              <span class="pick-name" id="cos-name">Classic</span>
+              <button class="arrow" id="cos-next" aria-label="Next costume">▶</button>
+            </div>
+            <div class="pick-hint" id="cos-status">Costume</div>
+          </div>
+        </div>
+
         <p class="label">Choose how tricky:</p>
         <div class="difficulty" id="difficulty">
           <button class="diff" data-diff="easy">Easy</button>
@@ -59,7 +79,9 @@
         <h1>Game Over</h1>
         <p class="score-line">Score: <span id="final-score">0</span></p>
         <p class="score-line small">Dragons collected: <span id="final-dragons">0</span></p>
+        <p class="unlock-line hidden" id="final-unlock"></p>
         <button class="play" id="btn-again">▶ Play Again</button>
+        <button class="secondary" id="btn-menu">☰ Main Menu</button>
       </div>
     </div>
 
