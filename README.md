@@ -7,7 +7,8 @@ falling fire!
 Built with plain **HTML + CSS + vanilla JavaScript + Canvas** — no frameworks, no build step, no
 servers, **fully offline**. Installable as a Progressive Web App.
 
-See [`docs/game-requirements.md`](docs/game-requirements.md) for the full design spec.
+Docs: [`docs/game-requirements.md`](docs/game-requirements.md) — what the game does (the spec);
+[`docs/architecture.md`](docs/architecture.md) — how it's built (tech, rendering, PWA, build/dev tooling).
 
 ## How to play
 
@@ -61,7 +62,7 @@ game.js               # all game logic + vector rendering
 manifest.webmanifest  # PWA metadata
 service-worker.js     # offline caching
 icons/                # app icons (original SVG + generated PNGs)
-docs/                 # game-requirements.md (the spec)
+docs/                 # game-requirements.md (the spec) + architecture.md (how it's built)
 ```
 
 ## Privacy
