@@ -113,7 +113,10 @@ Unlockable costumes:
 - **Royal** — Complete Adventure once
 - **Forest** — Reach 5,000 total lifetime points
 - **Winter** — Reach 10,000 total lifetime points
-- **Golden Hero** — Complete all 12 Adventure levels without a Game Over
+- **Golden Hero** — Complete all 12 Adventure levels in a **single flawless run (no hit taken)**.
+  (The original "without a Game Over" wording is redundant in practice — a Game Over ends the run,
+  so any completion already implies no Game Over — so this is implemented as a no-damage run, a
+  genuinely harder achievement than Royal.)
 - **Rainbow** — Collect 1,000 dragons across all games
 
 Costumes are cosmetic only. Each costume is a **drawn outfit variant** (palette swap plus small
@@ -429,6 +432,19 @@ multiplayer.
 
 Online multiplayer, accounts, networking, cloud saves, advertising, analytics, microtransactions,
 in-app purchases, external assets, game engines, build pipelines, server-side code.
+
+## Implementation status (v1.0)
+
+The game is **fully implemented and live** (GitHub Pages, installable PWA). Minor deltas from the
+spec above, recorded here so doc and code stay in sync:
+
+- **No separate Settings screen.** Settings are covered by the always-visible **mute** and **pause**
+  buttons (mute preference persists). The Main-Menu "Settings" entry was folded into these.
+- **Background music** is implemented as simple procedural Web Audio loops (menu / gameplay /
+  victory); it does **not** yet get more energetic with difficulty.
+- **Accessibility:** most controls pair an icon with text; the **mute/pause** buttons are
+  icon-only (a small future polish item).
+- **Golden Hero** unlock = flawless (no-hit) Adventure completion, as noted under Costumes.
 
 ---
 
