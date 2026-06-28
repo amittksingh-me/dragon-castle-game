@@ -1,15 +1,18 @@
-# The Dragon World — Complete Game Requirements (Version 1.0)
+# The Dragon World — Game Requirements (Version 1.0)
 
 > **Game name:** "The Dragon World". (Project folder remains `dragon-castle-game`.)
-
-> **Source of truth for the game's design.** Keep this current. The repo may be made public
-> (GitHub Pages), so **no family names, ages, or other personal details** go in any committed file.
+>
+> **Source of truth for what the game does** (behaviour, rules, content). Implementation/design
+> decisions — tech stack, rendering, audio engine, PWA, build/dev tooling — live in
+> [architecture.md](architecture.md). Keep both current.
+>
+> The repo is public (GitHub Pages), so **no family names, ages, or other personal details** go in
+> any committed file.
 
 ## Overview
 
-The Dragon World is a cheerful, family-friendly arcade platform game built using plain HTML, CSS, and
-JavaScript. The game is designed primarily for children but should remain enjoyable for players of
-all ages.
+The Dragon World is a cheerful, family-friendly arcade platform game. It is designed primarily for
+children but should remain enjoyable for players of all ages.
 
 The player controls a hero standing on top of a castle. Friendly dragons fly across the sky while
 occasionally breathing fire. The objective is to **jump and touch dragons to collect them as stars**
@@ -18,435 +21,185 @@ while avoiding the falling fireballs.
 The game should feel fun, colorful, rewarding, and **never violent**. Dragons are friends that
 become stars when collected — they are never attacked or harmed.
 
-The game must run **completely offline** after installation, require **no backend**, **no user
-accounts**, and **no external libraries**.
-
-## Design Goals
+## Design goals & constraints
 
 The game should be:
 
-- Easy to learn
-- Challenging without becoming frustrating
-- Responsive on desktop and mobile
-- Beautiful using only emoji and Canvas graphics
-- Installable as a Progressive Web App
-- Playable completely offline
-- Lightweight with no asset downloads
-- Suitable for publishing on GitHub Pages
+- Easy to learn; challenging without becoming frustrating.
+- Responsive on desktop and mobile (keyboard **and** touch).
+- Colorful, bright, and welcoming — **richer than plain emoji**, with visually distinct heroes.
+- **Installable** (Progressive Web App) and **playable completely offline** after first load.
+- **Lightweight** — no asset downloads at runtime.
+- **No backend, no user accounts, no networking** — everything runs locally in the browser.
 
-## Technology
-
-Use only:
-
-- HTML5
-- CSS3
-- Vanilla JavaScript (ES2022)
-- HTML5 Canvas
-- SVG (inline and/or local asset files)
-- Web Audio API
-- localStorage
-
-Do **NOT** use: React, Vue, Angular, Phaser, Pixi, jQuery, Node.js, build tools, bundlers,
-TypeScript, or any external **libraries / game engines**.
-
-**External assets** (art/audio) may be **sourced from outside but must be vendored** — saved as a
-local copy in the repo, license-clean, and cached. **Nothing is fetched at runtime,** so the game
-**works fully offline** and by simply opening `index.html` locally.
-
-## Project Structure
-
-```
-dragon-castle-game/
-  index.html
-  style.css
-  game.js
-  manifest.webmanifest
-  service-worker.js
-  icons/
-  assets/            # vendored, license-clean SVG art (and any audio); cached for offline
-  docs/
-    game-requirements.md
-  README.md
-```
-
-## Art Style
-
-The game uses **richer-than-emoji vector art**: **original, hand-authored SVG** for the heroes
-(Prince, Princess, Knight, Wizard, Archer), dragons, castle, fire, hearts, stars, and sparkles —
-committed into the repo and rendered on the Canvas (drawn directly and/or composited from SVG).
-Plain Canvas drawing (shapes, gradients) is also used for backgrounds and effects.
-
-- **Assets may be sourced externally but must be vendored** — saved as a **local copy** in the repo,
-  **license-clean** (original or CC0/permissive). **Nothing is fetched at runtime;** the game bundles
-  everything and **stays fully offline.**
-- **No external JS libraries or game engines** — rendering is hand-written (vanilla JS + Canvas/SVG).
-- **No external fonts** (system fonts or drawn text only).
-- Art is **data-driven** so a character/costume is described by a small palette + parts definition
-  (and/or a set of SVGs), making new characters and outfits easy to add.
-
-The overall appearance should be colorful, bright, and welcoming.
+_(How these are realized — stack, offline caching, rendering — see [architecture.md](architecture.md).)_
 
 ## Characters
 
-Players choose a character before starting. Characters:
+Players choose a character before starting:
 
-- Prince
-- Princess
-- Knight
-- Wizard
-- Archer
+- Prince · Princess · Knight · Wizard · Archer
 
-All characters play identically — only appearance changes. Selection is remembered using
-localStorage. The character system should be **data-driven** so adding future characters requires
-only configuration changes.
+All characters play identically — only appearance changes. Selection is remembered across sessions.
+Adding future characters should require **configuration only**, not new code paths.
 
 ## Costumes
 
-Each character supports multiple costumes.
+Each character can wear multiple costumes (cosmetic only). Costumes are **global/shared** — unlocking
+one makes it available on **every** character — and are kept permanently once earned.
 
-Starting costume:
+Starting costume: **Classic**.
 
-- **Classic**
+Unlockable:
 
-Unlockable costumes:
-
-- **Royal** — Complete Adventure once
-- **Forest** — Reach 5,000 total lifetime points
-- **Winter** — Reach 10,000 total lifetime points
+- **Royal** — Complete Adventure once.
+- **Forest** — Reach 5,000 total lifetime points.
+- **Winter** — Reach 10,000 total lifetime points.
 - **Golden Hero** — Complete all 12 Adventure levels in a **single flawless run (no hit taken)**.
-  (The original "without a Game Over" wording is redundant in practice — a Game Over ends the run,
-  so any completion already implies no Game Over — so this is implemented as a no-damage run, a
-  genuinely harder achievement than Royal.)
-- **Rainbow** — Collect 1,000 dragons across all games
+  (The original "without a Game Over" wording is redundant — a Game Over ends the run, so any
+  completion already implies no Game Over — so it is a no-damage run: a genuinely harder feat than
+  Royal.)
+- **Rainbow** — Collect 1,000 dragons across all games.
 
-Costumes are cosmetic only. Each costume is a **drawn outfit variant** (palette swap plus small
-parts like a crown, cape, or aura), defined in data so new costumes are easy to add.
+These five are the **only** costumes in v1.0. The dragon-collection milestones (below) are **badges,
+not costumes** (only Rainbow is tied to a dragon count, at 1,000).
 
-**Scope — costumes are global/shared:** unlocking a costume makes it available on **every**
-character (not unlocked per character). Unlocked costumes are permanently stored using localStorage.
-
-These five are the **only** costumes in v1.0 — the dragon-collection milestones below are **badges,
-not costumes** (only the **Rainbow** costume is tied to a dragon count, at 1,000).
-
-## Game Modes
+## Game modes
 
 ### Adventure
 
-- Adventure contains **12 levels**.
-- Players always begin at Level 1. There is **no save/resume system**.
-- Between levels the following continue: score, hearts, selected character, selected costume,
-  difficulty.
-- Every third completed level restores one heart, up to the player's starting maximum.
-- Completing Level 12 displays the **Victory** screen.
+- **12 levels.** Players always begin at Level 1; there is **no save/resume**.
+- Between levels these continue: score, hearts, character, costume, difficulty.
+- Every **third** completed level restores one heart, up to the starting maximum.
+- Completing Level 12 shows the **Victory** screen.
 
 ### Endless
 
-- The game continues until the player loses every heart.
+- Continues until the player loses every heart.
 - Difficulty gradually increases every **30 seconds**.
-- High scores are saved separately for each difficulty.
+- High scores are saved separately per difficulty.
 
-## Difficulty Levels
+## Difficulty levels
 
-### Easy (recommended for younger children)
+| | Easy (younger) | Medium | Brave (experienced) |
+|---|---|---|---|
+| Starting hearts | 5 | 4 | 3 |
+| Max dragons | 2 | 3 | 5 |
+| Max fireballs | 2 | 4 | 6 |
+| Feel | slow, large hitboxes, higher jump, forgiving | balanced | fast dragons & fire, small hitboxes, challenging |
 
-- Starting Hearts: **5**
-- Maximum Dragons: **2**
-- Maximum Fireballs: **2**
-- Slow dragons, slow fireballs, large collision boxes, higher jump, slow difficulty increase.
-- Designed to be forgiving.
+## Core gameplay
 
-### Medium (recommended for children with some gaming experience)
-
-- Starting Hearts: **4**
-- Maximum Dragons: **3**
-- Maximum Fireballs: **4**
-- Balanced gameplay.
-
-### Brave (recommended for experienced players)
-
-- Starting Hearts: **3**
-- Maximum Dragons: **5**
-- Maximum Fireballs: **6**
-- Fast dragons, frequent fire, fast falling fireballs, smaller collision boxes, fast difficulty
-  increase.
-- Still fair but significantly more challenging.
-
-## Core Gameplay
-
-The hero stands on top of the castle. The player may Move Left, Move Right, and Jump.
-
-The hero:
-
-- Cannot fall from the castle
-- Cannot move beyond castle edges
-- Cannot double jump
-- Can move while airborne
-- Uses a fixed jump height
-
-Only one jump may be active at a time.
+The hero stands on the castle and can **Move Left, Move Right, Jump**. The hero cannot fall off or
+move beyond the castle edges, cannot double-jump, uses a **fixed jump height**, and may move while
+airborne. Only one jump may be active at a time.
 
 ### Dragons
 
-Friendly dragons continuously fly across the sky. Behavior:
-
-- Alternate entering from left and right.
-- Fly across the screen.
-- Gentle vertical bobbing movement.
-- Never overlap excessively.
-- Never exceed the maximum dragons allowed for the selected difficulty.
-- Dragons occasionally breathe fire.
-
-Touching a dragon:
-
-- Immediately collects it.
-- Dragon becomes sparkles.
-- Player gains points.
-- Floating score animation appears.
-- Dragon disappears.
-
-A single jump may collect multiple dragons.
+Friendly dragons continuously fly across the sky: alternate entering from left and right, fly
+across, bob gently up and down, don't overlap excessively, and never exceed the difficulty's max.
+They occasionally breathe fire. **Touching a dragon** immediately collects it (it becomes sparkles,
+awards points, shows a floating score, and disappears). A single jump may collect multiple dragons.
 
 ### Fireballs
 
-Each dragon has an independent cooldown timer. When ready, it breathes fire.
+Each dragon breathes fire on an independent cooldown (Easy: one fireball; Medium: one or two;
+Brave: two). Fireballs fall, accelerate slightly, drift a little horizontally, and disappear off the
+bottom of the screen or on hitting the player.
 
-- Easy: one fireball
-- Medium: one or two fireballs
-- Brave: two fireballs
+## Collision rules
 
-Fireballs:
+- **Dragon:** collect immediately, award score, collect sound + sparkles.
+- **Fireball:** lose one heart, fireball disappears, **1.5 s invincibility** (player flashes; no
+  further damage during it).
+- **Both at once:** collect the dragon **and** lose a heart; invincibility begins immediately after.
 
-- Fall downward
-- Accelerate slightly
-- Randomly drift a little horizontally
-- Disappear after leaving the screen
-- Disappear immediately after hitting the player
+## Difficulty scaling
 
-## Collision Rules
+**Adventure** — per level: dragon speed +~8%, fire frequency +~5%. The difficulty's max-dragons is a
+**starting cap that ramps**: +1 around Level 5 and +1 around Level 9 (e.g. Easy 2→3→4, Medium
+3→4→5, Brave 5→6→7).
 
-Dragon collision:
-
-- Collect dragon immediately
-- Award score
-- Play collect sound
-- Show sparkle animation
-
-Fireball collision:
-
-- Lose one heart
-- Fireball disappears
-- Player becomes invincible for **1.5 seconds**
-- Player flashes while invincible
-- No additional damage during invincibility
-
-If a dragon and fireball are touched simultaneously:
-
-- Collect the dragon
-- Award points
-- Player still loses one heart
-- Invincibility begins immediately afterward
-
-## Difficulty Scaling
-
-### Adventure
-
-- Every level: dragon speed increases by approximately **8%**.
-- Every level: fire frequency increases by approximately **5%**.
-- The difficulty's **Maximum Dragons is a starting cap that ramps up** in Adventure: it increases by
-  one around **Level 5** and again around **Level 9** (e.g. Easy 2 → 3 → 4; Medium 3 → 4 → 5;
-  Brave 5 → 6 → 7). (In **Endless**, the difficulty's Maximum Dragons is a **flat cap** — no
-  level-based ramp.)
-
-### Endless
-
-- Every 30 seconds: dragon speed increases, fire speed increases, fire frequency increases.
-- Difficulty stops increasing after approximately **ten minutes**.
+**Endless** — every 30 s dragon speed, fire speed, and fire frequency increase; scaling stops after
+~10 minutes. Max dragons is a flat cap (no level ramp).
 
 ## Scoring
 
-- Dragon collected: **100 points**
-- Combo: collect another dragon within **two seconds**; each additional dragon awards **+25 bonus**.
-- Adventure completion bonus: **500 points**
-- Remaining hearts after completing Adventure: **100 points each**
+- Dragon collected: **100**.
+- Combo: another dragon within **2 seconds** adds **+25** each.
+- Adventure completion bonus: **500**; plus **100 per remaining heart**.
+- Separate high scores for: Adventure Easy/Medium/Brave and Endless Easy/Medium/Brave.
 
-Separate high scores are stored for: Adventure Easy, Adventure Medium, Adventure Brave, Endless
-Easy, Endless Medium, Endless Brave.
+## Dragon collection
 
-## Dragon Collection
-
-The game tracks lifetime dragons collected. Milestones:
-
-- 25 dragons
-- 100 dragons
-- 250 dragons
-- 500 dragons
-- 1000 dragons
-
-These milestones are **collection badges** shown on the Dragon Collection screen — they are **not**
-costume unlocks (with the single exception that reaching **1,000** also unlocks the **Rainbow**
-costume, as listed under Costumes). Lifetime totals are stored using localStorage.
+Lifetime dragons collected is tracked, with milestone **badges** at **25 / 100 / 250 / 500 / 1000**
+shown on the Dragon Collection screen. These are badges, not costume unlocks (reaching 1,000 also
+unlocks the Rainbow costume, per Costumes).
 
 ## Controls
 
-### Keyboard
-
-- Move Left: Left Arrow or A
-- Move Right: Right Arrow or D
-- Jump: Space or Up Arrow
-- Pause: P
-- Mute: M
-
-### Touch
-
-Large on-screen controls: Left, Right, Jump.
-
-- Buttons remain visible.
-- Buttons support multi-touch.
-- Movement buttons may be held.
-- Jump is activated by tapping.
-- Pause and mute buttons remain visible.
-
-Mouse clicks should activate the same controls.
+- **Keyboard:** Move ← → or **A**/**D**; Jump **Space** or **↑**; Pause **P**; Mute **M**.
+- **Touch:** large always-visible Left / Right / Jump buttons (multi-touch; movement buttons held,
+  jump tapped); pause and mute buttons always visible. Mouse clicks activate the same controls.
 
 ## Audio
 
-Use Web Audio API. Sound is **synthesized procedurally** at runtime by default (oscillators/noise,
-simple chiptune-style melody loops) — this needs nothing to source and keeps the game offline. If
-any pre-made audio is used instead of synthesis, it must be a **vendored local file** (committed,
-license-clean, cached); **nothing is fetched at runtime.**
+Cheerful, child-friendly sound:
 
-Sound effects:
+- **Sound effects** for: button click, jump, dragon collected, combo, fire breathing, player hit,
+  heart restored, level complete, new costume unlocked, victory, game over.
+- **Background music** for main menu, gameplay, and victory — cheerful and unobtrusive; may become
+  slightly more energetic as difficulty rises.
+- A **mute** control silences **all** sound; the preference is remembered.
 
-- Button click, Jump, Dragon collected, Combo, Fire breathing, Player hit, Heart restored, Level
-  complete, New costume unlocked, Victory, Game Over.
+_(Audio is synthesized at runtime — see [architecture.md](architecture.md).)_
 
-Background music: Main Menu, Gameplay, Victory.
+## User interface
 
-- Music should be cheerful and unobtrusive.
-- Mute must silence all sounds.
-- Mute preference is remembered.
-- As difficulty increases, music may become slightly more energetic.
-
-## User Interface
-
-### Main Menu
-
-Adventure, Endless, Difficulty selection, Character selection, Costume selection, High scores,
-Dragon Collection, How to Play, Settings.
-
-### HUD
-
-Hearts, Score, Current level, Adventure objective, Pause, Mute.
-
-### Pause Menu
-
-Resume, Restart, Main Menu.
-
-### Level Complete
-
-Score, Remaining hearts, Continue.
-
-### Victory Screen
-
-Fireworks, Sparkles, Victory fanfare, display newly unlocked costumes (if any), Final score,
-Play Again, Main Menu.
-
-### Game Over (Endless)
-
-Final score, High score, Play Again, Main Menu.
+- **Main menu:** Adventure, Endless, difficulty, character & costume selection, High Scores, Dragon
+  Collection, How to Play. _(A separate Settings screen is not used — mute/pause cover it.)_
+- **HUD:** hearts, score, current level + objective (Adventure), pause, mute.
+- **Pause:** Resume, Restart, Main Menu.
+- **Level Complete:** score, next-level goal, Continue.
+- **Victory:** fireworks, final score, any newly unlocked costumes, Play Again, Main Menu.
+- **Game Over:** final score, best score, dragons collected, Play Again, Main Menu.
 
 ## Animations
 
-- Hero squashes slightly before jumping.
-- Dragons gently bob while flying.
-- Fireballs leave a small ember trail.
-- Collecting dragons creates sparkles.
-- Floating score numbers appear.
-- Hearts bounce when lost.
-- Level Complete banner slides in.
-- Victory screen shows fireworks.
-- Very gentle screen shake occurs when hit.
-- Screen shake is disabled on Easy difficulty.
+Hero squash before jumping; dragons bob; fireballs leave a small ember trail; sparkles on collect;
+floating score numbers; hearts bounce when lost/restored; Victory fireworks; gentle screen shake on
+a hit (**disabled on Easy**).
 
-## Performance
+## Performance & display
 
-- Target 60 FPS; remain playable at 30 FPS.
-- Maximum active objects: 100.
-- Canvas logical resolution: 1280 × 720.
-- Maintain aspect ratio; scale responsively; support high-DPI displays.
-- Landscape is preferred. Portrait displays a friendly "Rotate your device" message while remaining
-  usable.
+- Target **60 FPS**; remain playable at 30 FPS.
+- Maintain aspect ratio, scale responsively, support high-DPI displays.
+- **Landscape preferred**; portrait shows a friendly "rotate your device" hint.
 
 ## Accessibility
 
-- Large touch controls.
-- High-contrast UI.
-- Icons always accompanied by text.
-- No flashing effects above three flashes per second.
-- Pause available at all times.
-- Mute remembered.
+Large touch controls; high-contrast UI; icons paired with text where practical; no flashing above
+three flashes/second; pause available at all times; mute remembered.
 
 ## Saving
 
-Persist using localStorage:
+Remembered across sessions: selected character, costume, unlocked costumes, high scores, lifetime
+dragons, lifetime points, mute preference, selected difficulty, selected mode. In-progress games are
+**not** saved; Adventure always starts at Level 1. _(Storage mechanism — see
+[architecture.md](architecture.md).)_
 
-- Selected character, selected costume, unlocked costumes, high scores, lifetime dragons collected,
-  lifetime points, mute preference, selected difficulty, selected game mode.
+## Browser support
 
-Do not save in-progress games. Adventure always starts from Level 1.
+Desktop: Chrome, Edge, Firefox, Safari. Mobile: Chrome, Samsung Internet, Safari. Modern browsers
+only.
 
-## Progressive Web App
+## Future enhancements
 
-Include `manifest.webmanifest` and `service-worker.js`. App **icons** (in `icons/`) are **generated
-locally and committed** (drawn as SVG, plus the PNG sizes a manifest needs) — not downloaded from
-anywhere.
+Additional characters/costumes, boss dragons, power-ups (shield, double jump, slow motion),
+achievements, statistics screen, seasonal themes, daily challenges, cloud saves, multiplayer.
 
-- Installable
-- Offline after first load
-- Fullscreen support
-- Works on Android and iOS
-- Automatic cache updates; new version activated after refresh or reopening.
-
-## Browser Support
-
-- Desktop: Chrome, Edge, Firefox, Safari.
-- Mobile: Chrome, Samsung Internet, Safari.
-- Modern browsers only.
-
-## Coding Standards
-
-- Use readable ES2022 JavaScript.
-- Keep all gameplay constants together in one configuration section.
-- Separate rendering, physics, input, audio, UI, and game state into clearly organized sections
-  within `game.js`.
-- Comment non-obvious logic.
-- Write code that is easy to extend with additional characters, costumes, levels, and power-ups.
-
-## Future Enhancements
-
-Additional characters, additional costumes, boss dragons, power-ups (shield, double jump, slow
-motion), achievements, statistics screen, seasonal themes, daily challenges, cloud saves,
-multiplayer.
-
-## Non-Goals (Version 1.0)
+## Non-goals (Version 1.0)
 
 Online multiplayer, accounts, networking, cloud saves, advertising, analytics, microtransactions,
-in-app purchases, external assets, game engines, build pipelines, server-side code.
-
-## Implementation status (v1.0)
-
-The game is **fully implemented and live** (GitHub Pages, installable PWA). Minor deltas from the
-spec above, recorded here so doc and code stay in sync:
-
-- **No separate Settings screen.** Settings are covered by the always-visible **mute** and **pause**
-  buttons (mute preference persists). The Main-Menu "Settings" entry was folded into these.
-- **Background music** is implemented as simple procedural Web Audio loops (menu / gameplay /
-  victory); it does **not** yet get more energetic with difficulty.
-- **Accessibility:** most controls pair an icon with text; the **mute/pause** buttons are
-  icon-only (a small future polish item).
-- **Golden Hero** unlock = flawless (no-hit) Adventure completion, as noted under Costumes.
-
----
-
-The objective is to create a polished, fun, lightweight, offline-friendly game that children can
-enjoy immediately on both desktop and mobile while remaining simple to maintain and extend.
+in-app purchases, game engines, build pipelines, server-side code, and any **runtime/CDN asset
+loading** (assets, if added, must be vendored — see [architecture.md](architecture.md)).
