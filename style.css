@@ -218,3 +218,42 @@ html, body {
   color: var(--text);
   box-shadow: 0 4px 0 rgba(0,0,0,0.3);
 }
+
+/* ---------- menu play rows ---------- */
+.play-row { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-top: 16px; }
+.play-row .play { margin-top: 0; }
+.mini-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 16px; }
+.mini {
+  border: 2px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.08);
+  color: var(--text);
+  border-radius: 12px;
+  padding: 8px 14px;
+  font-size: clamp(12px, 2vmin, 16px);
+  font-weight: 700;
+  cursor: pointer;
+}
+.mini:active { transform: scale(0.95); }
+
+/* ---------- high scores ---------- */
+.scores-list { display: flex; gap: 18px; justify-content: center; flex-wrap: wrap; margin: 14px 0; }
+.score-group { background: rgba(255,255,255,0.06); border-radius: 14px; padding: 10px 16px; min-width: 170px; }
+.score-mode { font-weight: 800; color: var(--accent); margin-bottom: 6px; font-size: clamp(14px, 2.4vmin, 18px); }
+.score-item { display: flex; justify-content: space-between; gap: 18px; font-size: clamp(13px, 2.2vmin, 17px); padding: 2px 0; }
+.score-item span:last-child { font-weight: 800; color: #fff; }
+
+/* ---------- collection ---------- */
+.big-count { font-size: clamp(34px, 8vmin, 60px); font-weight: 900; color: var(--accent); margin-top: 8px; }
+.muted { opacity: 0.75; font-size: clamp(12px, 2.1vmin, 16px); margin: 4px 0; }
+.badges { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin: 14px 0; }
+.badge {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  width: 64px; padding: 10px 0; border-radius: 12px;
+  background: rgba(255,255,255,0.06); font-size: 22px; opacity: 0.55;
+}
+.badge.got { opacity: 1; background: rgba(255,210,63,0.18); border: 1px solid rgba(255,210,63,0.5); }
+.badge span { font-size: 13px; font-weight: 700; }
+
+/* ---------- how to play ---------- */
+.howto { text-align: left; margin: 14px auto; max-width: 44ch; line-height: 1.6; font-size: clamp(13px, 2.3vmin, 18px); }
+.howto li { margin: 6px 0; list-style: none; }

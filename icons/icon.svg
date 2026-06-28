@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6db8f0"/>
+      <stop offset="1" stop-color="#bfe7ff"/>
+    </linearGradient>
+    <linearGradient id="stone" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#b6a892"/>
+      <stop offset="1" stop-color="#8a7a64"/>
+    </linearGradient>
+  </defs>
+
+  <!-- rounded background -->
+  <rect width="512" height="512" rx="96" fill="url(#sky)"/>
+
+  <!-- sun -->
+  <circle cx="396" cy="120" r="46" fill="#ffec96"/>
+
+  <!-- dragon (simple friendly shape) -->
+  <g transform="translate(150,150)">
+    <path d="M-70 16 Q-110 6 -126 30 L-110 36 L-118 52 Z" fill="#5fbf5f"/>
+    <path d="M-10 -10 Q-46 -76 12 -64 Q6 -28 -10 -10 Z" fill="#7ad07a"/>
+    <ellipse cx="0" cy="0" rx="52" ry="38" fill="#5fbf5f"/>
+    <ellipse cx="4" cy="14" rx="34" ry="20" fill="#fdf0c8"/>
+    <ellipse cx="54" cy="-12" rx="28" ry="24" fill="#5fbf5f"/>
+    <circle cx="60" cy="-18" r="8" fill="#fff"/>
+    <circle cx="63" cy="-18" r="4" fill="#1c2536"/>
+    <path d="M44 -34 L38 -54 L54 -38 Z" fill="#fff4d6"/>
+  </g>
+
+  <!-- star -->
+  <path d="M360 250 l16 34 37 5 -27 26 7 37 -33 -18 -33 18 7 -37 -27 -26 37 -5 z" fill="#ffd23f" stroke="#ff9a3f" stroke-width="4"/>
+
+  <!-- castle -->
+  <g>
+    <rect x="40" y="360" width="432" height="120" fill="url(#stone)"/>
+    <g fill="#a2937c">
+      <rect x="48"  y="334" width="48" height="34"/>
+      <rect x="136" y="334" width="48" height="34"/>
+      <rect x="224" y="334" width="48" height="34"/>
+      <rect x="312" y="334" width="48" height="34"/>
+      <rect x="400" y="334" width="48" height="34"/>
+    </g>
+    <!-- gate -->
+    <path d="M214 480 L214 420 Q256 388 298 420 L298 480 Z" fill="#5b4a36"/>
+  </g>
+</svg>

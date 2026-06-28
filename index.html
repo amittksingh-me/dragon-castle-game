@@ -4,6 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#7ec0ee" />
+  <meta name="description" content="The Dragon World — a friendly arcade game: jump to touch dragons and collect them as stars while dodging fire." />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <title>The Dragon World</title>
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -11,8 +15,8 @@
   <div id="stage">
     <canvas id="game"></canvas>
 
-    <!-- On-screen controls (touch + mouse). Visible always per spec. -->
-    <div class="controls" id="controls" aria-hidden="false">
+    <!-- On-screen controls (touch + mouse) -->
+    <div class="controls" id="controls">
       <div class="pad-left">
         <button class="btn move" id="btn-left" aria-label="Move left">◀</button>
         <button class="btn move" id="btn-right" aria-label="Move right">▶</button>
@@ -28,7 +32,7 @@
       <button class="sysbtn" id="btn-pause" aria-label="Pause">⏸</button>
     </div>
 
-    <!-- Start screen -->
+    <!-- ===================== MAIN MENU ===================== -->
     <div class="overlay" id="overlay-start">
       <div class="panel">
         <h1>The Dragon World</h1>
@@ -59,33 +63,100 @@
           <button class="diff selected" data-diff="medium">Medium</button>
           <button class="diff" data-diff="brave">Brave</button>
         </div>
-        <button class="play" id="btn-play">▶ Play</button>
-        <p class="hint">Move: ← → or A D &nbsp;·&nbsp; Jump: Space / ↑ &nbsp;·&nbsp; Pause: P &nbsp;·&nbsp; Mute: M</p>
+
+        <div class="play-row">
+          <button class="play" id="btn-adventure">🗺️ Adventure</button>
+          <button class="play" id="btn-endless">♾️ Endless</button>
+        </div>
+
+        <div class="mini-row">
+          <button class="mini" id="btn-scores">🏆 Scores</button>
+          <button class="mini" id="btn-collection">🐉 Collection</button>
+          <button class="mini" id="btn-howto">❓ How to Play</button>
+        </div>
       </div>
     </div>
 
-    <!-- Pause screen -->
+    <!-- ===================== PAUSE ===================== -->
     <div class="overlay hidden" id="overlay-pause">
       <div class="panel">
         <h1>Paused</h1>
         <button class="play" id="btn-resume">▶ Resume</button>
         <button class="secondary" id="btn-restart-pause">↺ Restart</button>
+        <button class="secondary" id="btn-menu-pause">☰ Main Menu</button>
       </div>
     </div>
 
-    <!-- Game over screen -->
+    <!-- ===================== LEVEL COMPLETE ===================== -->
+    <div class="overlay hidden" id="overlay-levelcomplete">
+      <div class="panel">
+        <h1 id="lc-title">Level complete!</h1>
+        <p class="score-line" id="lc-score">Score: 0</p>
+        <p class="score-line small" id="lc-next"></p>
+        <button class="play" id="btn-continue">▶ Continue</button>
+      </div>
+    </div>
+
+    <!-- ===================== VICTORY ===================== -->
+    <div class="overlay hidden" id="overlay-victory">
+      <div class="panel">
+        <h1>🎆 You Win! 🎆</h1>
+        <p class="tagline" id="vic-sub">You saved the Dragon World!</p>
+        <p class="score-line" id="vic-score">Final score: 0</p>
+        <p class="unlock-line hidden" id="vic-unlock"></p>
+        <button class="play" id="btn-vic-again">▶ Play Again</button>
+        <button class="secondary" id="btn-vic-menu">☰ Main Menu</button>
+      </div>
+    </div>
+
+    <!-- ===================== GAME OVER ===================== -->
     <div class="overlay hidden" id="overlay-over">
       <div class="panel">
         <h1>Game Over</h1>
         <p class="score-line">Score: <span id="final-score">0</span></p>
-        <p class="score-line small">Dragons collected: <span id="final-dragons">0</span></p>
+        <p class="score-line small">Best: <span id="final-high">0</span> &nbsp;·&nbsp; Dragons: <span id="final-dragons">0</span></p>
         <p class="unlock-line hidden" id="final-unlock"></p>
         <button class="play" id="btn-again">▶ Play Again</button>
         <button class="secondary" id="btn-menu">☰ Main Menu</button>
       </div>
     </div>
 
-    <!-- Rotate hint (portrait) -->
+    <!-- ===================== HIGH SCORES ===================== -->
+    <div class="overlay hidden" id="overlay-scores">
+      <div class="panel">
+        <h1>🏆 High Scores</h1>
+        <div class="scores-list" id="scores-list"></div>
+        <button class="secondary" id="btn-scores-back">← Back</button>
+      </div>
+    </div>
+
+    <!-- ===================== DRAGON COLLECTION ===================== -->
+    <div class="overlay hidden" id="overlay-collection">
+      <div class="panel">
+        <h1>🐉 Dragon Collection</h1>
+        <div id="collection-body"></div>
+        <button class="secondary" id="btn-coll-back">← Back</button>
+      </div>
+    </div>
+
+    <!-- ===================== HOW TO PLAY ===================== -->
+    <div class="overlay hidden" id="overlay-howto">
+      <div class="panel">
+        <h1>How to Play</h1>
+        <ul class="howto">
+          <li>🏰 You stand on top of the castle.</li>
+          <li>⬅️➡️ Move with the arrows / <b>A D</b> keys or the on-screen buttons.</li>
+          <li>⬆️ <b>Jump</b> (Space / ↑ / JUMP button) to <b>touch a dragon</b> — it turns into a star!</li>
+          <li>🔥 Don't get hit by falling fire — you lose a ❤️.</li>
+          <li>⭐ Catch dragons quickly in a row for <b>combo</b> bonus points.</li>
+          <li>🗺️ <b>Adventure</b>: clear 12 levels. ♾️ <b>Endless</b>: survive as long as you can!</li>
+          <li>👗 Collect dragons and score points to unlock new <b>costumes</b>.</li>
+        </ul>
+        <button class="secondary" id="btn-howto-back">← Back</button>
+      </div>
+    </div>
+
+    <!-- ===================== ROTATE HINT ===================== -->
     <div class="overlay hidden" id="overlay-rotate">
       <div class="panel">
         <h1>↻</h1>
@@ -95,5 +166,10 @@
   </div>
 
   <script src="game.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('service-worker.js').catch(() => {}));
+    }
+  </script>
 </body>
 </html>
